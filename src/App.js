@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import cs from 'classnames';
 import './App.css';
 
 const GRID_SIZE = 35;
@@ -8,7 +9,15 @@ for (let i = 0; i <= GRID_SIZE; i += 1) {
   GRID.push(i);
 }
 
-class App extends Component {
+const isBorder = (x, y) =>
+  x === 0 || y === 0 || x === GRID_SIZE || y === GRID_SIZE;
+
+const getCellCs = (x, y) =>
+  cs('grid-cell', {
+    'grid-cell-border': isBorder(x, y),
+  });
+
+export default class App extends Component {
   constructor(props) {
     super(props);
 
@@ -24,4 +33,10 @@ class App extends Component {
   }
 }
 
-export default App;
+const Grid = () => <div>{GRID.map(y => <Row y={y} key={y} />)}</div>;
+
+const Row = ({ y }) => (
+  <div className="grid-row">{GRID.map(x => <Cell x={x} y={y} key={x} />)}</div>
+);
+
+const Cell = ({ x, y }) => <div className={getCellCs(x, y)} />;
