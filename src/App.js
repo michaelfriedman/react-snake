@@ -60,14 +60,34 @@ const getIsSnakeEating = ({ snake, snack }) =>
     snack.coordinate.y,
   );
 
-const getCellCs = (x, y, snake, snack) =>
+const getIsSnakeOutside = snake =>
+  getSnakeHead(snake).x >= GRID_SIZE ||
+  getSnakeHead(snake).y >= GRID_SIZE ||
+  getSnakeHead(snake).x <= 0 ||
+  getSnakeHead(snake).y <= 0;
+
+const getIsSnakeClumsy = snake =>
+  isSnake(getSnakeHead(snake).x, getSnakeHead(snake).y, getSnakeTail(snake));
+
+const getSnakeTail = snake => snake.coordinates.slice(1);
+
+const getCellCs = (isGameOver, x, y, snake, snack) =>
   cs('grid-cell', {
     'grid-cell-border': isBorder(x, y),
     'grid-cell-snake': isSnake(x, y, snake.coordinates),
     'grid-cell-snack': isPosition(x, y, snack.coordinate.x, snack.coordinate.y),
+    'grid-cell-hit':
+      isGameOver &&
+      isPosition(x, y, getSnakeHead(snake).x, getSnakeHead(snake).y),
   });
 
-const applySnakePositon = prevState => {
+const applyGameOver = prevState => ({
+  playground: {
+    isGameOver: true,
+  },
+});
+
+const applySnakePosition = prevState => {
   const isSnakeEating = getIsSnakeEating(prevState);
 
   const snakeHead = DIRECTION_TICKS[prevState.playground.direction](
@@ -102,6 +122,7 @@ export default class App extends Component {
     this.state = {
       playground: {
         direction: DIRECTIONS.RIGHT,
+        isGameOver: false,
       },
       snake: {
         coordinates: [getRandomCoordinate()],
@@ -122,7 +143,11 @@ export default class App extends Component {
     window.removeEventListener('keyup', this.onChangeDirection, false);
   }
   onTick = () => {
-    this.setState(applySnakePositon);
+    const { snake } = this.state;
+
+    getIsSnakeOutside(snake) || getIsSnakeClumsy(snake)
+      ? this.setState(applyGameOver)
+      : this.setState(applySnakePosition);
   };
   onChangeDirection = ({ keyCode }) => {
     const direction = KEY_CODES_MAPPER[keyCode];
@@ -131,26 +156,40 @@ export default class App extends Component {
     }
   };
   render() {
-    const { snake, snack } = this.state;
+    const { snake, snack, playground } = this.state;
+
     return (
       <div className="app">
         <h1>Snake!</h1>
-        <Grid snake={snake} snack={snack} />
+        <Grid isGameOver={playground.isGameOver} snake={snake} snack={snack} />
       </div>
     );
   }
 }
 
-const Grid = ({ snake, snack }) => (
-  <div>{GRID.map(y => <Row y={y} key={y} snake={snake} snack={snack} />)}</div>
-);
-
-const Row = ({ y, snake, snack }) => (
-  <div className="grid-row">
-    {GRID.map(x => <Cell x={x} y={y} key={x} snake={snake} snack={snack} />)}
+const Grid = ({ isGameOver, snake, snack }) => (
+  <div>
+    {GRID.map(y => (
+      <Row isGameOver={isGameOver} y={y} key={y} snake={snake} snack={snack} />
+    ))}
   </div>
 );
 
-const Cell = ({ x, y, snake, snack }) => (
-  <div className={getCellCs(x, y, snake, snack)} />
+const Row = ({ isGameOver, y, snake, snack }) => (
+  <div className="grid-row">
+    {GRID.map(x => (
+      <Cell
+        isGameOver={isGameOver}
+        x={x}
+        y={y}
+        key={x}
+        snake={snake}
+        snack={snack}
+      />
+    ))}
+  </div>
+);
+
+const Cell = ({ isGameOver, x, y, snake, snack }) => (
+  <div className={getCellCs(isGameOver, x, y, snake, snack)} />
 );
