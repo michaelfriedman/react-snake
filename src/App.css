@@ -20,3 +20,11 @@
 .grid-cell-border {
   background-color: #000;
 }
+
+.grid-cell-snake {
+  background-color: #000;
+}
+
+.grid-cell-snack {
+  background-color: blue;
+}
